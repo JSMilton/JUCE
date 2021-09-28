@@ -315,7 +315,7 @@ private:
 
     void checkForExternalDrag (DragAndDropTarget::SourceDetails& details, Point<int> screenPos)
     {
-        if (! hasCheckedForExternalDrag)
+        if (! hasCheckedForExternalDrag || owner.shouldCheckForExternalDropContinuously)
         {
             if (Desktop::getInstance().findComponentAt (screenPos) == nullptr)
             {
