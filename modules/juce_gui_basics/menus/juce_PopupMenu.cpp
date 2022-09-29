@@ -390,7 +390,6 @@ struct MenuWindow  : public Component
                 setAccessible (false);
 
             addToDesktop (ComponentPeer::windowIsTemporary
-                          | ComponentPeer::windowIgnoresKeyPresses
                           | lf.getMenuWindowFlags());
 
             Desktop::getInstance().addGlobalMouseListener (this);
