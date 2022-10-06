@@ -165,6 +165,8 @@ public:
     /** @internal */
     void lookAndFeelChanged() override;
 
+    std::function<void()> calloutDismissed = [&]{};
+    
 private:
     //==============================================================================
     Component& content;

@@ -175,6 +175,7 @@ void CallOutBox::handleCommandMessage (int commandId)
 void CallOutBox::dismiss()
 {
     postCommandMessage (callOutBoxDismissCommandId);
+    calloutDismissed();
 }
 
 bool CallOutBox::keyPressed (const KeyPress& key)
