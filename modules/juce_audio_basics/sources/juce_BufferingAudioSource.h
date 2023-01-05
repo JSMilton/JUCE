@@ -59,7 +59,8 @@ public:
                           bool deleteSourceWhenDeleted,
                           int numberOfSamplesToBuffer,
                           int numberOfChannels = 2,
-                          bool prefillBufferOnPrepareToPlay = true);
+                          bool prefillBufferOnPrepareToPlay = true,
+                          AudioBuffer<float>* preallocatedBuffer = nullptr);
 
     /** Destructor.
 
@@ -108,7 +109,7 @@ private:
     OptionalScopedPointer<PositionableAudioSource> source;
     TimeSliceThread& backgroundThread;
     int numberOfSamplesToBuffer, numberOfChannels;
-    AudioBuffer<float> buffer;
+    AudioBuffer<float>* buffer;
     CriticalSection callbackLock, bufferRangeLock;
     WaitableEvent bufferReadyEvent;
     int64 bufferValidStart = 0, bufferValidEnd = 0;

@@ -28,7 +28,8 @@ BufferingAudioSource::BufferingAudioSource (PositionableAudioSource* s,
                                             bool deleteSourceWhenDeleted,
                                             int bufferSizeSamples,
                                             int numChannels,
-                                            bool prefillBufferOnPrepareToPlay)
+                                            bool prefillBufferOnPrepareToPlay,
+                                            AudioBuffer<float>* preallocatedBuffer)
     : source (s, deleteSourceWhenDeleted),
       backgroundThread (thread),
       numberOfSamplesToBuffer (jmax (1024, bufferSizeSamples)),
@@ -38,7 +39,9 @@ BufferingAudioSource::BufferingAudioSource (PositionableAudioSource* s,
     jassert (source != nullptr);
 
     jassert (numberOfSamplesToBuffer > 1024); // not much point using this class if you're
-                                              //  not using a larger buffer..
+                                              //  not using a larger buffer->.
+    
+    buffer = preallocatedBuffer;
 }
 
 BufferingAudioSource::~BufferingAudioSource()
@@ -52,7 +55,7 @@ void BufferingAudioSource::prepareToPlay (int samplesPerBlockExpected, double ne
     auto bufferSizeNeeded = jmax (samplesPerBlockExpected * 2, numberOfSamplesToBuffer);
 
     if (newSampleRate != sampleRate
-         || bufferSizeNeeded != buffer.getNumSamples()
+         || bufferSizeNeeded != buffer->getNumSamples()
          || ! isPrepared)
     {
         backgroundThread.removeTimeSliceClient (this);
@@ -62,8 +65,8 @@ void BufferingAudioSource::prepareToPlay (int samplesPerBlockExpected, double ne
 
         source->prepareToPlay (samplesPerBlockExpected, newSampleRate);
 
-        buffer.setSize (numberOfChannels, bufferSizeNeeded);
-        buffer.clear();
+        buffer->setSize (numberOfChannels, bufferSizeNeeded, false, true, true);
+        buffer->clear();
 
         const ScopedLock sl (bufferRangeLock);
 
@@ -80,7 +83,7 @@ void BufferingAudioSource::prepareToPlay (int samplesPerBlockExpected, double ne
                 backgroundThread.moveToFrontOfQueue (this);
                 Thread::sleep (5);
             }
-            while (bufferValidEnd - bufferValidStart < jmin (((int) newSampleRate) / 4, buffer.getNumSamples() / 2));
+            while (bufferValidEnd - bufferValidStart < jmin (((int) newSampleRate) / 4, buffer->getNumSamples() / 2));
         }
     }
 }
@@ -90,7 +93,7 @@ void BufferingAudioSource::releaseResources()
     isPrepared = false;
     backgroundThread.removeTimeSliceClient (this);
 
-    buffer.setSize (numberOfChannels, 0);
+    buffer->setSize (numberOfChannels, 0, false, true, true);
 
     // MSVC2017 seems to need this if statement to not generate a warning during linking.
     // As source is set in the constructor, there is no way that source could
@@ -126,29 +129,29 @@ void BufferingAudioSource::getNextAudioBlock (const AudioSourceChannelInfo& info
     {
         for (int chan = jmin (numberOfChannels, info.buffer->getNumChannels()); --chan >= 0;)
         {
-            jassert (buffer.getNumSamples() > 0);
+            jassert (buffer->getNumSamples() > 0);
 
-            const auto startBufferIndex = (int) ((validStart + nextPlayPos) % buffer.getNumSamples());
-            const auto endBufferIndex   = (int) ((validEnd + nextPlayPos)   % buffer.getNumSamples());
+            const auto startBufferIndex = (int) ((validStart + nextPlayPos) % buffer->getNumSamples());
+            const auto endBufferIndex   = (int) ((validEnd + nextPlayPos)   % buffer->getNumSamples());
 
             if (startBufferIndex < endBufferIndex)
             {
                 info.buffer->copyFrom (chan, info.startSample + validStart,
-                                       buffer,
+                                       *buffer,
                                        chan, startBufferIndex,
                                        validEnd - validStart);
             }
             else
             {
-                const auto initialSize = buffer.getNumSamples() - startBufferIndex;
+                const auto initialSize = buffer->getNumSamples() - startBufferIndex;
 
                 info.buffer->copyFrom (chan, info.startSample + validStart,
-                                       buffer,
+                                       *buffer,
                                        chan, startBufferIndex,
                                        initialSize);
 
                 info.buffer->copyFrom (chan, info.startSample + validStart + initialSize,
-                                       buffer,
+                                       *buffer,
                                        chan, 0,
                                        (validEnd - validStart) - initialSize);
             }
@@ -244,7 +247,7 @@ bool BufferingAudioSource::readNextBufferChunk()
         }
 
         newBVS = jmax ((int64) 0, nextPlayPos.load());
-        newBVE = newBVS + buffer.getNumSamples() - 4;
+        newBVE = newBVS + buffer->getNumSamples() - 4;
         sectionToReadStart = 0;
         sectionToReadEnd = 0;
 
@@ -276,10 +279,10 @@ bool BufferingAudioSource::readNextBufferChunk()
     if (sectionToReadStart == sectionToReadEnd)
         return false;
 
-    jassert (buffer.getNumSamples() > 0);
+    jassert (buffer->getNumSamples() > 0);
 
-    const auto bufferIndexStart = (int) (sectionToReadStart % buffer.getNumSamples());
-    const auto bufferIndexEnd   = (int) (sectionToReadEnd   % buffer.getNumSamples());
+    const auto bufferIndexStart = (int) (sectionToReadStart % buffer->getNumSamples());
+    const auto bufferIndexEnd   = (int) (sectionToReadEnd   % buffer->getNumSamples());
 
     if (bufferIndexStart < bufferIndexEnd)
     {
@@ -289,7 +292,7 @@ bool BufferingAudioSource::readNextBufferChunk()
     }
     else
     {
-        const auto initialSize = buffer.getNumSamples() - bufferIndexStart;
+        const auto initialSize = buffer->getNumSamples() - bufferIndexStart;
 
         readBufferSection (sectionToReadStart,
                            initialSize,
@@ -316,7 +319,7 @@ void BufferingAudioSource::readBufferSection (int64 start, int length, int buffe
     if (source->getNextReadPosition() != start)
         source->setNextReadPosition (start);
 
-    AudioSourceChannelInfo info (&buffer, bufferOffset, length);
+    AudioSourceChannelInfo info (buffer, bufferOffset, length);
 
     const ScopedLock sl (callbackLock);
     source->getNextAudioBlock (info);
