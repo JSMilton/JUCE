@@ -71,16 +71,17 @@ void BufferingAudioSource::prepareToPlay (int samplesPerBlockExpected, double ne
         bufferValidEnd = 0;
 
         backgroundThread.addTimeSliceClient (this);
+        
+        if (prefillBuffer) {
+            do
+            {
+                const ScopedUnlock ul (bufferRangeLock);
 
-        do
-        {
-            const ScopedUnlock ul (bufferRangeLock);
-
-            backgroundThread.moveToFrontOfQueue (this);
-            Thread::sleep (5);
+                backgroundThread.moveToFrontOfQueue (this);
+                Thread::sleep (5);
+            }
+            while (bufferValidEnd - bufferValidStart < jmin (((int) newSampleRate) / 4, buffer.getNumSamples() / 2));
         }
-        while (prefillBuffer
-         && (bufferValidEnd - bufferValidStart < jmin (((int) newSampleRate) / 4, buffer.getNumSamples() / 2)));
     }
 }
 
