@@ -88,8 +88,8 @@ void DryWetMixer<SampleType>::prepare (const ProcessSpec& spec)
 template <typename SampleType>
 void DryWetMixer<SampleType>::reset()
 {
-    dryVolume.reset (sampleRate, 0.05);
-    wetVolume.reset (sampleRate, 0.05);
+    dryVolume.reset (sampleRate, smoothing);
+    wetVolume.reset (sampleRate, smoothing);
 
     dryDelayLine.reset();
 
@@ -199,6 +199,14 @@ void DryWetMixer<SampleType>::update()
 
     dryVolume.setTargetValue (dryValue);
     wetVolume.setTargetValue (wetValue);
+}
+
+template <typename SampleType>
+void DryWetMixer<SampleType>::setSmooting(float seconds)
+{
+    smoothing = seconds;
+    dryVolume.reset (sampleRate, smoothing);
+    wetVolume.reset (sampleRate, smoothing);
 }
 
 //==============================================================================

@@ -99,6 +99,8 @@ public:
         @see pushDrySamples
     */
     void mixWetSamples (AudioBlock<SampleType> wetSamples);
+    
+    void setSmooting(float seconds);
 
 private:
     //==============================================================================
@@ -114,6 +116,7 @@ private:
     MixingRule currentMixingRule = MixingRule::linear;
     double sampleRate = 44100.0;
     int maximumWetLatencyInSamples = 0;
+    float smoothing = 0.05;
 };
 
 } // namespace dsp
