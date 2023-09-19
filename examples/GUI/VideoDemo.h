@@ -134,11 +134,14 @@ private:
         }
         else
         {
-            AlertWindow::showMessageBoxAsync (MessageBoxIconType::WarningIcon,
-                                              "Couldn't load the file!",
-                                              result.getErrorMessage());
+            auto options = MessageBoxOptions::makeOptionsOk (MessageBoxIconType::WarningIcon,
+                                                             "Couldn't load the file!",
+                                                             result.getErrorMessage());
+            messageBox = AlertWindow::showScopedAsync (options, nullptr);
         }
     }
+
+    ScopedMessageBox messageBox;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MovieComponentWithFileBrowser)
 };
@@ -154,7 +157,7 @@ public:
         setOpaque (true);
 
         movieList.setDirectory (File::getSpecialLocation (File::userMoviesDirectory), true, true);
-        directoryThread.startThread (1);
+        directoryThread.startThread (Thread::Priority::background);
 
         fileTree.setTitle ("Files");
         fileTree.addListener (this);
@@ -627,7 +630,7 @@ private:
         currentPositionLabel.setText (getPositionString (position, duration), sendNotification);
 
         if (! positionSliderDragging)
-            positionSlider.setValue (duration != 0 ? (position / duration) : 0.0, dontSendNotification);
+            positionSlider.setValue (approximatelyEqual (duration, 0.0) ? 0.0 : (position / duration), dontSendNotification);
     }
 
     void seekVideoToStart()

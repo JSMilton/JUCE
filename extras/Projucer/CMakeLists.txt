@@ -30,10 +30,6 @@ juce_add_gui_app(Projucer
 
 juce_generate_juce_header(Projucer)
 
-# This is to work around a bug with how cmake computes language standard flags with
-# target_compile_features
-set_target_properties(Projucer PROPERTIES CXX_STANDARD 11)
-
 target_sources(Projucer PRIVATE
     Source/Application/jucer_AutoUpdater.cpp
     Source/Application/jucer_CommandLine.cpp
@@ -151,6 +147,7 @@ juce_add_binary_data(ProjucerData SOURCES
     Source/BinaryData/gradle/gradle-wrapper.jar
     Source/BinaryData/gradle/gradlew
     Source/BinaryData/gradle/gradlew.bat
+    Source/BinaryData/juce_SimpleBinaryBuilder.cpp
 
     ../Build/CMake/JuceLV2Defines.h.in
     ../Build/CMake/LaunchScreen.storyboard
@@ -160,7 +157,8 @@ juce_add_binary_data(ProjucerData SOURCES
     ../Build/CMake/PIPConsole.cpp.in
     ../Build/CMake/RecentFilesMenuTemplate.nib
     ../Build/CMake/UnityPluginGUIScript.cs.in
-    ../Build/CMake/juce_runtime_arch_detection.cpp)
+    ../Build/CMake/juce_runtime_arch_detection.cpp
+    ../Build/CMake/juce_LinuxSubprocessHelper.cpp)
 
 target_link_libraries(Projucer PRIVATE
     ProjucerData

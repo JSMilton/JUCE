@@ -164,6 +164,8 @@ public:
     int getBorderSize() const noexcept;
     /** @internal */
     void lookAndFeelChanged() override;
+    /** @internal */
+    std::unique_ptr<AccessibilityHandler> createAccessibilityHandler() override;
 
     std::function<void()> calloutDismissed = [&]{};
     
@@ -179,7 +181,6 @@ private:
 
     Time creationTime;
 
-    std::unique_ptr<AccessibilityHandler> createAccessibilityHandler() override;
     void refreshPath();
     void timerCallback() override;
 
