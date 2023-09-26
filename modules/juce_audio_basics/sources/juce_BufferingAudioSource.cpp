@@ -55,7 +55,7 @@ void BufferingAudioSource::prepareToPlay (int samplesPerBlockExpected, double ne
     auto bufferSizeNeeded = jmax (samplesPerBlockExpected * 2, numberOfSamplesToBuffer);
 
     if (! approximatelyEqual (newSampleRate, sampleRate)
-         || bufferSizeNeeded != buffer.getNumSamples()
+         || bufferSizeNeeded != buffer->getNumSamples()
          || ! isPrepared)
     {
         backgroundThread.removeTimeSliceClient (this);
