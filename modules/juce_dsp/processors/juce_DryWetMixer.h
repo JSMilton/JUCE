@@ -23,9 +23,7 @@
   ==============================================================================
 */
 
-namespace juce
-{
-namespace dsp
+namespace juce::dsp
 {
 
 enum class DryWetMixingRule
@@ -119,5 +117,4 @@ private:
     float smoothing = 0.05;
 };
 
-} // namespace dsp
-} // namespace juce
+} // namespace juce::dsp
